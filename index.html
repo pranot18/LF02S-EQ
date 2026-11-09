@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>LF02S (BP1032A2) 10-Band EQ</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --card-bg: #101728;
+      --card-inner: #162038;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --accent-glow: rgba(56, 189, 248, 0.35);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.4);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e2c4d;
+      --border-inner: #24355a;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 8px;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .header {
+      text-align: center;
+      padding: 4px 0;
+    }
+    .header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .btn {
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-connect {
+      background: var(--accent);
+      color: #070b14;
+      width: 100%;
+      padding: 11px;
+    }
+    .btn-connected {
+      background: var(--green);
+      color: white;
+      width: 100%;
+      padding: 11px;
+    }
+    .btn-burn {
+      background: #059669;
+      color: white;
+      box-shadow: 0 0 10px var(--green-glow);
+    }
+    .btn-burn:active {
+      background: #10b981;
+    }
+    .btn-secondary {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #18233c;
+      margin-top: 8px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    .status-dot.active {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .val-badge {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* 10-Band EQ Matrix */
+    .eq-container {
+      background: var(--card-inner);
+      border-radius: 10px;
+      padding: 12px 4px;
+      border: 1px solid var(--border-inner);
+      overflow-x: auto;
+    }
+    .eq-grid {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(76px, 1fr));
+      gap: 5px;
+      align-items: end;
+      justify-items: center;
+      min-width: 760px;
+    }
+    .eq-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      background: rgba(13, 20, 36, 0.7);
+      padding: 6px 3px;
+      border-radius: 6px;
+      border: 1px solid #1f2f54;
+    }
+    .eq-band-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #93c5fd;
+    }
+    .eq-col .db-display {
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: var(--accent);
+      font-weight: 700;
+      min-height: 16px;
+    }
+    .eq-slider-wrapper {
+      height: 125px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 0;
+    }
+    .v-slider {
+      -webkit-appearance: slider-vertical;
+      writing-mode: bt-lr;
+      width: 12px;
+      height: 115px;
+      cursor: pointer;
+    }
+    .input-mini-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      width: 100%;
+      margin-top: 3px;
+    }
+    .input-mini-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+    .input-mini {
+      width: 44px;
+      background: #090e1a;
+      border: 1px solid #283759;
+      color: var(--text);
+      font-size: 0.68rem;
+      font-family: monospace;
+      padding: 2px;
+      border-radius: 3px;
+      text-align: center;
+      outline: none;
+    }
+    .select-type {
+      width: 100%;
+      background: #090e1a;
+      border: 1px solid #283759;
+      color: #cbd5e1;
+      font-size: 0.65rem;
+      padding: 2px;
+      border-radius: 3px;
+      outline: none;
+      text-align: center;
+    }
+
+    /* Horizontal Sliders */
+    .slider-group {
+      margin-bottom: 12px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+      color: var(--text-muted);
+    }
+    input[type=range].h-slider {
+      width: 100%;
+      height: 7px;
+      border-radius: 4px;
+      background: #18233c;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type=range].h-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Presets bar */
+    .preset-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+    .btn-preset {
+      background: #18233c;
+      border: 1px solid #2a3c63;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+    .btn-preset:active {
+      background: var(--accent);
+      color: #090e1a;
+    }
+
+    /* Terminal */
+    .terminal {
+      background: #060910;
+      border: 1px solid #1a253d;
+      border-radius: 6px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 0.7rem;
+      color: #38bdf8;
+      max-height: 70px;
+      overflow-y: auto;
+      word-break: break-all;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: #10b981;
+      color: white;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.25s;
+      z-index: 999;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>LF02S 10-Band EQ & Flash Burner</h1>
+      <p>Android USB OTG Controller | BP1032A2</p>
+    </div>
+
+    <!-- Connection -->
+    <div class="card" style="text-align: center;">
+      <button id="btnConnect" class="btn btn-connect">
+        <span>เชื่อมต่อบอร์ด LF02S (USB)</span>
+      </button>
+      <div class="status-badge">
+        <div id="statusDot" class="status-dot"></div>
+        <span id="statusText">รอการเชื่อมต่อสาย Type-C</span>
+      </div>
+    </div>
+
+    <!-- 10-Band Out EQ -->
+    <div class="card">
+      <div class="section-title">
+        <span>Music Out EQ (0x87) 10 แบนด์</span>
+        <button id="btnBurnToFlash" class="btn btn-burn" title="บันทึกลง Flash ในบอร์ด ปิดเครื่องค่าไม่หาย">
+          <span>💾 บันทึกลงบอร์ด (Flash)</span>
+        </button>
+      </div>
+
+      <div class="eq-container">
+        <div class="eq-grid" id="eqGrid"></div>
+      </div>
+
+      <!-- Quick Preset Styles -->
+      <div class="preset-bar">
+        <button class="btn-preset" onclick="applyPreset('iniBaseline')">1234.ini เดิม</button>
+        <button class="btn-preset" onclick="applyPreset('flat')">Flat (0 dB)</button>
+        <button class="btn-preset" onclick="applyPreset('bass')">Bass Heavy</button>
+        <button class="btn-preset" onclick="applyPreset('vocal')">Vocal Clarity</button>
+        <button class="btn-preset" onclick="applyPreset('treble')">Treble Crisp</button>
+        <button class="btn-preset" onclick="applyPreset('rock')">Rock</button>
+      </div>
+    </div>
+
+    <!-- Master Volume & Tone Controls -->
+    <div class="card">
+      <div class="section-title">
+        <span>Master Volume & Tone Controls</span>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span>Master Volume (DAC0 0x09)</span>
+          <span id="dac0Val" class="val-badge">F0 0E (3824)</span>
+        </div>
+        <input type="range" id="dac0Slider" class="h-slider" min="0" max="4096" value="3824" step="16">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span>Virtual Bass (0x83)</span>
+          <span id="vbVal" class="val-badge">5 (0x05)</span>
+        </div>
+        <input type="range" id="vbSlider" class="h-slider" min="0" max="100" value="5">
+      </div>
+    </div>
+
+    <!-- Packet Monitor -->
+    <div class="card">
+      <div class="section-title" style="margin-bottom: 4px;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">USB Packet Log</span>
+      </div>
+      <div id="terminal" class="terminal">พร้อมส่งคำสั่ง...</div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">บันทึกสำเร็จ!</div>
+
+  <script>
+    let hidDevice = null;
+
+    // ข้อมูลเริ่มต้น 10 แบนด์ ดึงตรงจาก 1234.ini
+    const eqBands = [
+      { name: "f0", freq: 100,   q: 0.73, gain: 0.0,   type: 0 },
+      { name: "f1", freq: 161,   q: 0.76, gain: -0.5,  type: 0 },
+      { name: "f2", freq: 400,   q: 0.88, gain: 3.0,   type: 0 },
+      { name: "f3", freq: 1000,  q: 0.72, gain: 1.0,   type: 0 },
+      { name: "f4", freq: 2500,  q: 0.72, gain: 0.0,   type: 0 },
+      { name: "f5", freq: 4000,  q: 0.71, gain: -1.0,  type: 0 },
+      { name: "f6", freq: 6000,  q: 0.70, gain: -1.5,  type: 0 },
+      { name: "f7", freq: 10000, q: 0.58, gain: -2.5,  type: 0 },
+      { name: "f8", freq: 16000, q: 0.71, gain: 0.0,   type: 0 },
+      { name: "f9", freq: 20000, q: 0.71, gain: 0.0,   type: 0 }
+    ];
+
+    let outEqPayload = [
+      0xFF, 0x01, 0x00, 0xCD, 0x00, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x64, 0x00, 0xDA, 0x02, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0xA1, 0x00, 0xF8, 0x02, 0xCE, 0xFF,
+      0x01, 0x00, 0x00, 0x00, 0x90, 0x01, 0x70, 0x03, 0x2C, 0x01,
+      0x01, 0x00, 0x00, 0x00, 0xE8, 0x03, 0xD0, 0x02, 0x64, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0xC4, 0x09, 0xD0, 0x02, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0xA0, 0x0F, 0xC6, 0x02, 0x9C, 0xFF,
+      0x01, 0x00, 0x00, 0x00, 0x70, 0x17, 0xBC, 0x02, 0x6A, 0xFF,
+      0x01, 0x00, 0x00, 0x00, 0x10, 0x27, 0x44, 0x02, 0x06, 0xFF,
+      0x01, 0x00, 0x00, 0x00, 0x80, 0x3E, 0xC6, 0x02, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x20, 0x4E, 0xC6, 0x02, 0x00, 0x00
+    ];
+
+    const btnConnect = document.getElementById('btnConnect');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const terminal = document.getElementById('terminal');
+    const eqGrid = document.getElementById('eqGrid');
+    const toast = document.getElementById('toast');
+
+    const dac0Slider = document.getElementById('dac0Slider');
+    const dac0Val = document.getElementById('dac0Val');
+    const vbSlider = document.getElementById('vbSlider');
+    const vbVal = document.getElementById('vbVal');
+
+    function showToast(msg) {
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    // Callbacks สำหรับ Android Java Interface
+    window.onUsbConnected = function(name) {
+      statusDot.classList.add('active');
+      statusText.innerText = `เชื่อมต่อแล้ว: ${name}`;
+      btnConnect.classList.remove('btn-connect');
+      btnConnect.classList.add('btn-connected');
+      btnConnect.querySelector('span').innerText = "เชื่อมต่อสำเร็จแล้ว";
+    };
+
+    window.onUsbDisconnected = function() {
+      statusDot.classList.remove('active');
+      statusText.innerText = "ยังไม่ได้เชื่อมต่อ";
+      btnConnect.classList.add('btn-connect');
+      btnConnect.classList.remove('btn-connected');
+      btnConnect.querySelector('span').innerText = "เชื่อมต่อบอร์ด LF02S (USB)";
+    };
+
+    window.logMessage = function(msg) {
+      terminal.innerText = msg;
+    };
+
+    // สร้าง Grid 10 แบนด์
+    eqBands.forEach((band, idx) => {
+      const col = document.createElement('div');
+      col.className = 'eq-col';
+      col.innerHTML = `
+        <span class="eq-band-name">${band.name}</span>
+        <select class="select-type" id="typeSelect_${idx}">
+          <option value="0" selected>Peaking</option>
+          <option value="4">Low-Shelf</option>
+          <option value="3">High-Shelf</option>
+          <option value="1">Low-Pass</option>
+          <option value="2">High-Pass</option>
+          <option value="5">Notch</option>
+        </select>
+        <span class="db-display" id="dbText_${idx}">${band.gain > 0 ? '+' : ''}${band.gain.toFixed(1)}</span>
+        <div class="eq-slider-wrapper">
+          <input type="range" class="v-slider" id="eqSlider_${idx}" min="-18" max="18" step="0.5" value="${band.gain}">
+        </div>
+        <div class="input-mini-group">
+          <div class="input-mini-row">
+            <span>Hz</span>
+            <input type="number" class="input-mini" id="freqInput_${idx}" value="${band.freq}" min="20" max="20000" step="1">
+          </div>
+          <div class="input-mini-row">
+            <span>Q</span>
+            <input type="number" class="input-mini" id="qInput_${idx}" value="${band.q.toFixed(2)}" min="0.1" max="10.0" step="0.05">
+          </div>
+        </div>
+      `;
+      eqGrid.appendChild(col);
+
+      col.querySelector(`#typeSelect_${idx}`).addEventListener('change', (e) => {
+        band.type = parseInt(e.target.value);
+        encodeBand(idx);
+        sendOutEqPacket();
+      });
+
+      col.querySelector(`#eqSlider_${idx}`).addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById(`dbText_${idx}`).innerText = (val > 0 ? '+' : '') + val.toFixed(1);
+        band.gain = val;
+        encodeBand(idx);
+        sendOutEqPacket();
+      });
+
+      col.querySelector(`#freqInput_${idx}`).addEventListener('change', (e) => {
+        let val = parseInt(e.target.value);
+        if (isNaN(val) || val < 20) val = 20;
+        if (val > 20000) val = 20000;
+        e.target.value = val;
+        band.freq = val;
+        encodeBand(idx);
+        sendOutEqPacket();
+      });
+
+      col.querySelector(`#qInput_${idx}`).addEventListener('change', (e) => {
+        let val = parseFloat(e.target.value);
+        if (isNaN(val) || val < 0.1) val = 0.1;
+        if (val > 10.0) val = 10.0;
+        e.target.value = val.toFixed(2);
+        band.q = val;
+        encodeBand(idx);
+        sendOutEqPacket();
+      });
+    });
+
+    function encodeBand(idx) {
+      const b = eqBands[idx];
+      const offset = 7 + (idx * 10);
+      outEqPayload[offset + 2] = b.type & 0xFF;
+      outEqPayload[offset + 4] = b.freq & 0xFF;
+      outEqPayload[offset + 5] = (b.freq >> 8) & 0xFF;
+      const qRaw = Math.round(b.q * 1000);
+      outEqPayload[offset + 6] = qRaw & 0xFF;
+      outEqPayload[offset + 7] = (qRaw >> 8) & 0xFF;
+      let gainRaw = Math.round(b.gain * 100);
+      if (gainRaw < 0) gainRaw = 0x10000 + gainRaw;
+      outEqPayload[offset + 8] = gainRaw & 0xFF;
+      outEqPayload[offset + 9] = (gainRaw >> 8) & 0xFF;
+    }
+
+    async function sendOutEqPacket() {
+      const packet = [0xA5, 0x5A, 0x87, 0x6B, ...outEqPayload, 0x16];
+      await sendPacket(packet);
+    }
+
+    // 💾 บันทึกลง Flash ในบอร์ด
+    document.getElementById('btnBurnToFlash').addEventListener('click', async () => {
+      const burnPacket = [0xA5, 0x5A, 0xFD, 0x00, 0x16];
+      await sendPacket(burnPacket);
+      showToast("💾 บันทึกลง Flash ของบอร์ดสำเร็จ!");
+    });
+
+    function applyPreset(type) {
+      const presets = {
+        iniBaseline: [0.0, -0.5, 3.0, 1.0, 0.0, -1.0, -1.5, -2.5, 0.0, 0.0],
+        flat:        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        bass:        [8, 6, 4, 1, 0, 0, 0, 0, 0, 0],
+        vocal:       [-2, -1, 2, 5, 5, 3, 1, 0, 0, 0],
+        treble:      [-1, -1, 0, 0, 1, 4, 6, 8, 7, 5],
+        rock:        [7, 4, -1, -3, -1, 2, 5, 7, 7, 7]
+      };
+      const gains = presets[type];
+      if (!gains) return;
+
+      gains.forEach((g, idx) => {
+        eqBands[idx].gain = g;
+        eqBands[idx].type = 0;
+        document.getElementById(`typeSelect_${idx}`).value = 0;
+        document.getElementById(`eqSlider_${idx}`).value = g;
+        document.getElementById(`dbText_${idx}`).innerText = (g > 0 ? '+' : '') + g.toFixed(1);
+        encodeBand(idx);
+      });
+      sendOutEqPacket();
+      showToast(`โหลดพรีเซ็ต ${type.toUpperCase()}`);
+    }
+
+    // ส่ง Packet ผ่าน Android Native หรือ WebHID
+    async function sendPacket(bytesArray) {
+      const hexStr = bytesArray.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+      terminal.innerText = hexStr;
+
+      // 1. ถ้าทำงานบน Android App
+      if (window.AndroidUSB) {
+        window.AndroidUSB.sendHex(hexStr);
+        return;
+      }
+
+      // 2. ถ้าทำงานบน Web Browser (PC WebHID)
+      if (hidDevice && hidDevice.opened) {
+        try {
+          const data = new Uint8Array(bytesArray);
+          await hidDevice.sendReport(0, data);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+
+    // ปุ่มเชื่อมต่อ
+    btnConnect.addEventListener('click', async () => {
+      // บน Android App
+      if (window.AndroidUSB) {
+        window.AndroidUSB.connect();
+        return;
+      }
+
+      // บน PC WebHID
+      if ('hid' in navigator) {
+        try {
+          const devices = await navigator.hid.requestDevice({ filters: [{ vendorId: 0x8888 }] });
+          if (devices.length === 0) return;
+          hidDevice = devices[0];
+          await hidDevice.open();
+          window.onUsbConnected(hidDevice.productName || 'BP1032A2');
+          await sendPacket([0xA5, 0x5A, 0xFC, 0x07, 0x4D, 0x75, 0x73, 0x69, 0x63, 0x5F, 0x46, 0x16]);
+        } catch (err) {
+          terminal.innerText = `Error: ${err.message}`;
+        }
+      }
+    });
+
+    // Master Volume (DAC0 0x09)
+    dac0Slider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      const low = val & 0xFF;
+      const high = (val >> 8) & 0xFF;
+      dac0Val.innerText = `${low.toString(16).padStart(2, '0').toUpperCase()} ${high.toString(16).padStart(2, '0').toUpperCase()} (${val})`;
+
+      const packet = [
+        0xA5, 0x5A, 0x09, 0x1D,
+        0xFF, (val === 0 ? 0x00 : 0x03), 0x00, 0x07,
+        0x00, 0x00, 0x00,
+        low, high, low, high,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x16
+      ];
+      sendPacket(packet);
+    });
+
+    // Virtual Bass (0x83)
+    vbSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      vbVal.innerText = `${val} (0x${val.toString(16).toUpperCase()})`;
+
+      const packet = [
+        0xA5, 0x5A, 0x83, 0x09,
+        0xFF, (val === 0 ? 0x00 : 0x01), 0x00, val,
+        0x00, 0x05, 0x00, 0x00, 0x00,
+        0x16
+      ];
+      sendPacket(packet);
+    });
+  </script>
+</body>
+</html>

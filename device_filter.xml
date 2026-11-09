@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- VID 0x8888 = 34952, PID 0x171E = 5918 (MVSilicon BP1032A2) -->
+    <usb-device vendor-id="34952" product-id="5918" />
+</resources>
